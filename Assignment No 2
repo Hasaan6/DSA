@@ -1,0 +1,276 @@
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+struct Transaction {
+    int id = 1;
+    string details;
+    int amount;
+    Transaction* next;
+    Transaction* previous;
+};
+
+struct Account {
+    int accNumber = 1;
+    string holderName;
+    Account* next;
+    Transaction* transactionList;
+    Account* previous;
+};
+
+class TransactionHandler {
+public:
+    void addTransaction(Transaction*& transactionList) {
+        char option;
+        do {
+            int spending;
+            string note;
+
+            cout << "\nEnter Amount: ";
+            cin >> spending;
+            cin.ignore();
+
+            cout << "\nEnter Details: ";
+            getline(cin, note);
+
+            Transaction* newEntry = new Transaction();
+            newEntry->amount = spending;
+            newEntry->details = note;
+
+            if (transactionList) {
+                Transaction* temp = transactionList;
+                while (temp->next) {
+                    temp = temp->next;
+                }
+                newEntry->id = temp->id + 1;
+                temp->next = newEntry;
+                newEntry->previous = temp;
+            } else {
+                transactionList = newEntry;
+            }
+
+            newEntry->next = nullptr;
+
+            cout << "\nPress 'Y' to record another transaction: ";
+            cin >> option;
+        } while (option == 'Y' || option == 'y');
+    }
+
+    void showTransactions(Transaction* transactionList) {
+        Transaction* temp = transactionList;
+        while (temp) {
+            cout << "\nTransaction ID: " << temp->id << endl;
+            cout << "Amount: " << temp->amount << " Rs" << endl;
+            cout << "Description: " << temp->details << endl;
+            temp = temp->next;
+        }
+    }
+
+    void calculateTotal(Transaction* transactionList) {
+        Transaction* temp = transactionList;
+        int totalSpent = 0;
+        while (temp) {
+            totalSpent += temp->amount;
+            temp = temp->next;
+        }
+        cout << "\nTotal Amount Spent: " << totalSpent << " Rs\n";
+    }
+};
+
+class ExpenseManager {
+    Account* accountHead;
+    int accountCounter = 0;
+
+public:
+    ExpenseManager() { accountHead = nullptr; }
+
+    void createNewAccount() {
+        string name;
+        cout << "\nEnter Account Name: ";
+        cin.ignore();
+        getline(cin, name);
+
+        Account* newAcc = new Account();
+        accountCounter++;
+
+        if (accountHead) {
+            Account* temp = accountHead;
+            while (temp->next) {
+                temp = temp->next;
+            }
+            newAcc->accNumber = temp->accNumber + 1;
+            temp->next = newAcc;
+            newAcc->previous = temp;
+        } else {
+            accountHead = newAcc;
+            newAcc->previous = nullptr;
+        }
+
+        cout << "\nAssigned Account ID: " << newAcc->accNumber << endl;
+        newAcc->holderName = name;
+        newAcc->next = nullptr;
+        newAcc->transactionList = nullptr;
+
+        TransactionHandler transactionMgr;
+        transactionMgr.addTransaction(newAcc->transactionList);
+    }
+
+    void locateAccount() {
+        int accID, retries = 3;
+        string name;
+
+        while (retries > 0) {
+            cout << "\nEnter Account Name: ";
+            cin.ignore();
+            getline(cin, name);
+            cout << "Enter Account ID: ";
+            cin >> accID;
+
+            Account* temp = accountHead;
+            while (temp) {
+                if (name == temp->holderName && accID == temp->accNumber) {
+                    cout << "\nTransaction Details\n";
+                    TransactionHandler transactionMgr;
+                    transactionMgr.showTransactions(temp->transactionList);
+                    return;
+                }
+                temp = temp->next;
+            }
+
+            retries--;
+            if (retries > 0) {
+                cout << "\nIncorrect ID or Name! Remaining attempts: " << retries << endl;
+            } else {
+                cout << "\nAccess limit reached. Returning to main menu...\n";
+            }
+        }
+    }
+
+    void addTransactionToExistingAccount() {
+        int accID, retries = 3;
+        string name;
+
+        while (retries > 0) {
+            cout << "\nEnter Account Name: ";
+            cin.ignore();
+            getline(cin, name);
+            cout << "Enter Account ID: ";
+            cin >> accID;
+
+            Account* temp = accountHead;
+            while (temp) {
+                if (name == temp->holderName && accID == temp->accNumber) {
+                    TransactionHandler transactionMgr;
+                    transactionMgr.addTransaction(temp->transactionList);
+                    return;
+                }
+                temp = temp->next;
+            }
+
+            retries--;
+            if (retries > 0) {
+                cout << "\nIncorrect ID or Name! Remaining attempts: " << retries << endl;
+            } else {
+                cout << "\nAccess limit reached. Returning to main menu...\n";
+            }
+        }
+    }
+
+    int totalAccounts() { return accountCounter; }
+
+    void summarizeExpenses() {
+        int accID, retries = 3;
+        string name;
+
+        while (retries > 0) {
+            cout << "\nEnter Account Name: ";
+            cin.ignore();
+            getline(cin, name);
+            cout << "Enter Account ID: ";
+            cin >> accID;
+
+            Account* temp = accountHead;
+            while (temp) {
+                if (name == temp->holderName && accID == temp->accNumber) {
+                    TransactionHandler transactionMgr;
+                    transactionMgr.calculateTotal(temp->transactionList);
+                    return;
+                }
+                temp = temp->next;
+            }
+
+            retries--;
+            if (retries > 0) {
+                cout << "\nIncorrect ID or Name! Remaining attempts: " << retries << endl;
+            } else {
+                cout << "\nAccess limit reached. Returning to main menu...\n";
+            }
+        }
+    }
+
+    void showAllAccounts() {
+        Account* temp = accountHead;
+        while (temp) {
+            cout << "\nAccount Holder: " << temp->holderName << endl;
+            cout << "Account ID: " << temp->accNumber << endl;
+            char response;
+            cout << "\nPress 'Y' to view transactions: ";
+            cin >> response;
+            if (response == 'Y' || response == 'y') {
+                TransactionHandler transactionMgr;
+                transactionMgr.showTransactions(temp->transactionList);
+            }
+            temp = temp->next;
+        }
+    }
+};
+
+int main() {
+    int selection, securityCode = 1234, inputCode;
+    ExpenseManager manager;
+
+    while (true) {
+        cout << "\n===== Expense Management Menu =====\n";
+        cout << "1. Create Account\n";
+        cout << "2. Locate Account\n";
+        cout << "3. Add Transaction to Account\n";
+        cout << "4. View Total Accounts\n";
+        cout << "5. View Total Expenses\n";
+        cout << "6. Show All Accounts\n";
+        cout << "7. Exit\n";
+
+        cout << "\nEnter choice: ";
+        cin >> selection;
+
+        switch (selection) {
+            case 1:
+                manager.createNewAccount();
+                break;
+            case 2:
+                manager.locateAccount();
+                break;
+            case 3:
+                manager.addTransactionToExistingAccount();
+                break;
+            case 4:
+                cout << "\nTotal accounts registered: " << manager.totalAccounts() << endl;
+                break;
+            case 5:
+                manager.summarizeExpenses();
+                break;
+            case 6:
+                cout << "Enter Security Code: ";
+                cin >> inputCode;
+                if (inputCode == securityCode)
+                    manager.showAllAccounts();
+                else
+                    cout << "\nAccess Denied! Incorrect Code.\n";
+                break;
+            case 7:
+                return 0;
+            default:
+                cout << "\nInvalid selection! Please try again.\n";
+        }
+    }
+}
